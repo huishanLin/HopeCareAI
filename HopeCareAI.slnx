@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Inference/Inference.csproj" />
+  <Project Path="SharedClassLibrary/SharedClassLibrary.csproj" />
+  <Project Path="StaticData/StaticData.csproj" />
+  <Project Path="StreamData/StreamData.csproj" />
+</Solution>

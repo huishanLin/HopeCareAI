@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "StaticData": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
