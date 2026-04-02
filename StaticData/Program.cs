@@ -33,7 +33,9 @@ try
         #region SQL Script
         var selectSql = @"
                 WITH LatestHcdWeight AS (
-                    SELECT hdid, dryweight , postweight , preweight
+                    SELECT hdid, dryweight, postweight,preweight,
+                           (postweight - coalesce(clothweight2, 0) - coalesce(wchairweight2, 0)) AS calpostweight,
+                           (preweight - coalesce(clothweight, 0) - coalesce(wchairweight, 0)) as calpreweight
                     FROM dbo.hcdweight
                     WHERE hddate::date = @hddate
                 ), 
@@ -104,9 +106,9 @@ try
                     DATE_PART('year', AGE(list.birthday)) AS age,
                     coalesce(a.sexamheight, 177)/100.0 AS height,
                     h.dryweight AS dry_weight,
-                    h.postweight AS weight_post_dialysis,
-                    h.preweight AS weight_pre_dialysis,
-                    (h.preweight - h.postweight) AS delta_weight,
+                    h.calpostweight AS weight_post_dialysis,
+                    h.calpreweight AS weight_pre_dialysis,
+                    (h.calpreweight - h.calpostweight) AS delta_weight,
                     list.systolics AS bps,
                     list.diastolics AS bpd,
                     list.pulses AS hr,

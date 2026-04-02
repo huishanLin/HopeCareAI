@@ -48,7 +48,7 @@ try
                 LatestData AS (
                     SELECT h.*, n.patientid , ROW_NUMBER() OVER (PARTITION BY h.nfcno ORDER BY hddate DESC) AS rn
                     FROM dbo.hcthdgdata h inner join dbo.nfc n on n.nfcno = h.nfcno 
-                    where h.startflag = '1'
+                    where h.startflag = '1' and h.hddate::date = @hddate
                 ),
                 LatestRecord as (
 	                SELECT DISTINCT ON (h.hdid)
@@ -61,7 +61,6 @@ try
                     d.machineid AS machineid,
                     list.id AS hd_id,
 	                list.chartid AS patient_uuid,
-                    --CURRENT_TIMESTAMP AS transfer_time,
 	                d.hddate AS transfer_time,
                     list.bedno AS bed_name,
 	                list.startdt AS start_time,
@@ -71,35 +70,18 @@ try
                     coalesce(d.pulse, r.pulse) AS hr,
                     coalesce(d.pulse,r.pulse) AS pulse,
 	                p.dryweight AS dry_weight,
-                    -- 200 AS arterial_blood_flow,
 	                d.bloodflow AS arterial_blood_flow,
-                    ---3.57 AS arterial_pressure,
-	                --d.ap AS arterial_pressure,
-	                --77.96 AS bi_bag_conductivity,
-	                --23.19 AS bi_bag_temperature,
-	                --0.17 AS bicarbonate_adjustment,
-                    --243.21 AS blood_flow_rate,
-	                --d.bloodflow AS blood_flow_rate,
 	                d.bodytemperature AS blood_temperature,
-  	                --135.33 AS cyclic_Pressure_Holding_Test,
-                    --14.18 AS dialysate_conductivity,
 	                d.liqconct AS dialysate_conductivity,
 	                d.liqtemp AS dialysate_temperature,
-                    --468.81 AS dialysisate_flow_rate,
 	                d.liqflow AS dialysisate_flow_rate,
-	                --4681.16 AS heparin_accumulated_bolus_volume,
-	                --4232.01 AS heparin_accumulated_volume,
 	                d.anticglflow AS heparin_delivery_rate,
-                    --351.49 AS target_arterial_blood_flow,
 	                d.bloodflow, 220 target_arterial_blood_flow,
 	                NULLIF(REGEXP_REPLACE(p.hdliqna, '[^0-9.]', '', 'g'), '')::numeric AS target_sodium,
 	                d.ufgoal AS target_uf,
 	                d.tmp AS tmp,
-                    --1009.44 AS total_uf,
 	                d.ufvolumn AS total_uf,
-                    --90.24 AS uf_rate,
 	                d.ufrate AS uf_rate,
-                    --59.66 AS venous_pressure
 	                d.vp AS venous_pressure
                 FROM RankedList AS list
                 INNER JOIN LatestData AS d ON list.patientid = d.patientid and d.rn <= @intervalMinutes
