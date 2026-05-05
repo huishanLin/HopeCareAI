@@ -66,7 +66,7 @@ try
                 RankedList AS (
                     SELECT id, patientid, sex, chartid, bedno , hddate , systolics, diastolics, pulses ,birthday, ROW_NUMBER() OVER (PARTITION BY patientid ORDER BY hddate DESC) AS rn
                     FROM dbo.hcmhdlist
-                    WHERE rcdstatus between '2' and '4' and hddate::date = @hddate
+                    WHERE rcdstatus between '2' and '3' and hddate::date = @hddate
                 ),
                 LatestPlan AS (
                     SELECT hdid, hdliqk, hdliqna
@@ -97,7 +97,7 @@ try
                     list.hddate,
                     CURRENT_TIMESTAMP AS timestamp,
                     list.chartid AS medical_id, -- 非必填欄位
-                    list.bedno AS bed_name, -- 非必填欄位
+                    CONCAT('1HDU',list.bedno) AS bed_name, -- 非必填欄位
                     CASE 
                         WHEN list.sex::integer = 1 THEN 0
                         WHEN list.sex::integer = 2 THEN 1

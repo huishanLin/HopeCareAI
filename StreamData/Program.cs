@@ -25,6 +25,7 @@ var config = new ConfigurationBuilder()
 var stream_apiUrl = config.GetSection("StreamApiUrl").Value;
 var _connectString_hope_care = config.GetConnectionString("hope_care");
 int intervalMinutes = config.GetValue<int>("IntervalMinutes", 5); // 每次抓取的時間區間（分鐘）
+string intervalTime = DateTime.Now.AddMinutes(-intervalMinutes).ToString("yyyy-MM-dd HH:mm");
 var _nikkisoMappings = config.GetSection("FACTORS:NIKKISO").GetChildren()
                       .ToDictionary(x => x.Key, x => x.Value);
 
@@ -38,7 +39,7 @@ try
                 WITH RankedList AS (
                     SELECT *, ROW_NUMBER() OVER (PARTITION BY patientid ORDER BY hddate DESC) AS rn
                     FROM dbo.hcmhdlist
-                    where rcdstatus between '2' and '4' and hddate::date = @hddate
+                    where rcdstatus between '2' and '3' and hddate::date = @hddate
                 ),
                 LatestPlan AS (
                     SELECT *
@@ -48,7 +49,7 @@ try
                 LatestData AS (
                     SELECT h.*, n.patientid , ROW_NUMBER() OVER (PARTITION BY h.nfcno ORDER BY hddate DESC) AS rn
                     FROM dbo.hcthdgdata h inner join dbo.nfc n on n.nfcno = h.nfcno 
-                    where h.startflag = '1' and h.hddate::date = @hddate
+                    where h.startflag = '1' and h.hddate >= @intervalTime::timestamptz
                 ),
                 LatestRecord as (
 	                SELECT DISTINCT ON (h.hdid)
@@ -62,7 +63,7 @@ try
                     list.id AS hd_id,
 	                list.chartid AS patient_uuid,
 	                d.hddate AS transfer_time,
-                    list.bedno AS bed_name,
+                    CONCAT('1HDU',list.bedno) AS bed_name,
 	                list.startdt AS start_time,
 	                list.enddt AS end_time,
 	                coalesce(d.systolic, r.systolic) AS bps,
@@ -76,7 +77,7 @@ try
 	                d.liqtemp AS dialysate_temperature,
 	                d.liqflow AS dialysisate_flow_rate,
 	                d.anticglflow AS heparin_delivery_rate,
-	                d.bloodflow, 220 target_arterial_blood_flow,
+	                p.bloodflow as target_arterial_blood_flow,
 	                NULLIF(REGEXP_REPLACE(p.hdliqna, '[^0-9.]', '', 'g'), '')::numeric AS target_sodium,
 	                d.ufgoal AS target_uf,
 	                d.tmp AS tmp,
@@ -84,7 +85,7 @@ try
 	                d.ufrate AS uf_rate,
 	                d.vp AS venous_pressure
                 FROM RankedList AS list
-                INNER JOIN LatestData AS d ON list.patientid = d.patientid and d.rn <= @intervalMinutes
+                INNER JOIN LatestData AS d ON list.patientid = d.patientid and d.rn = 1
                 INNER JOIN LatestPlan AS p ON list.id = p.hdid 
                 LEFT JOIN LatestRecord AS r ON list.id = r.hdid
                 WHERE list.rn = 1";
@@ -92,7 +93,7 @@ try
 
     using var sourceConn = new NpgsqlConnection(_connectString_hope_care);
     Log.Information($"sql:{selectSql}");
-    var result = await sourceConn.QueryAsync<StreamDto>(selectSql, new { hddate = DateTime.Today, intervalMinutes });
+    var result = await sourceConn.QueryAsync<StreamDto>(selectSql, new { hddate = DateTime.Today, intervalTime });
 
     if (result.Count() == 0)
     {
