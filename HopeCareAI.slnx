@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="Inference/Inference.csproj" />
+  <Project Path="MetaData/MetaData.csproj" Id="ab6d9835-5a26-4b51-9c7f-991273c750c5" />
   <Project Path="SharedClassLibrary/SharedClassLibrary.csproj" />
   <Project Path="StaticData/StaticData.csproj" />
   <Project Path="StreamData/StreamData.csproj" />

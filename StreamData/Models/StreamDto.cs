@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace StreamData.Models
 {
-    public class StreamDto
+    public class StreamDto: IStreamData
     {
         [JsonIgnore]
 
@@ -16,6 +16,8 @@ namespace StreamData.Models
 
         [JsonPropertyName("patient_uuid")]
         public string patient_uuid { get; set; }
+
+        public string MachineIdentifier => machineid;
 
         [JsonPropertyName("Bed_Name")]
         public string bed_name { get; set; }
